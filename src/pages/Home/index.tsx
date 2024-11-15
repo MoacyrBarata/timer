@@ -11,13 +11,6 @@ import { Countdown } from "./components/Countdown";
 
 
 
-const newCycleFormValidationSchema = z.object({
-  task: z.string().min(1, 'Informa a tarefa'),
-  minutesAmount: z.number().min(5).max(60),
-})
-
-type NewCycleFormData = z.infer<typeof newCycleFormValidationSchema >
-
 interface Cycle{
   id: string
   task: string
@@ -30,48 +23,8 @@ interface Cycle{
 export function Home(){
   const [cycles, setCycles] = useState<Cycle[]>([])
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null)
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
-
-  const {register, handleSubmit, watch,reset } = useForm<NewCycleFormData>({
-    resolver: zodResolver(newCycleFormValidationSchema),
-    defaultValues: {
-      task: '',
-      minutesAmount: 0,
-    }
-  })
 
   const activeCycle  = cycles.find((cycle) => cycle.id === activeCycleId)
-
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
-
-  useEffect(() => {
-    let interval: number
-
-    if(activeCycle){
-      const interval =  setInterval(() => {
-        const secondDifference = differenceInSeconds(new Date(), activeCycle.startDate)
-
-        if(secondDifference >= totalSeconds){
-          setCycles((state) => state.map((cycle) => {
-            if(cycle.id === activeCycleId){
-              return { ...cycle, finishedDate: new Date()}
-            } else{
-              return cycle
-            }
-          }))    
-          setAmountSecondsPassed(totalSeconds)  
-          clearInterval(interval)
-        } else{
-          setAmountSecondsPassed(secondDifference)
-        }
-      }, 1000)
-    }
-    
-    return () => {
-      clearInterval(interval)
-    }
-
-  },[activeCycle,totalSeconds, activeCycleId])
 
   function handleCreateNewCycle(data: NewCycleFormData){
     const id = new Date().getTime().toString()
@@ -123,7 +76,7 @@ export function Home(){
     <HomeContainer>
       <form onSubmit={handleSubmit(handleCreateNewCycle)} action="">
         <NewCycleForm/>
-        <Countdown/>
+        <Countdown activeCycle={activeCycle} setCycles={setCycles} activeCycleId={activeCycleId}/>
           
         {activeCycle ? (
           <StopCountdownButton onClick={handleInterruptCycle} type="button">
